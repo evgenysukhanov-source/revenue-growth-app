@@ -406,12 +406,11 @@ function AppShell({ children, activeTab, setActiveTab }) {
     </div>
   );
 }
+
 function Card({ children, className = "" }) {
   return (
-    <div
-      className={`smooth-card liquid-glass relative overflow-hidden rounded-[2rem] p-5 shadow-[0_18px_50px_rgba(0,0,0,.22)] ${className}`}
-    >
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+    <div className={`relative overflow-hidden rounded-[2rem] border border-white/12 bg-white/[0.065] p-5 shadow-[0_24px_80px_rgba(0,0,0,.26)] backdrop-blur-2xl ${className}`}>
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
       {children}
     </div>
   );
@@ -457,6 +456,45 @@ function ProgressBar({ value }) {
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
       <div className={`h-full rounded-full ${cls}`} style={{ width: `${width}%` }} />
+    </div>
+  );
+}
+
+function AnnualTargetCard({ title, target, fact, expected, type = "money", hint }) {
+  const completion = target ? fact / target : 0;
+  const tempoDelta = expected ? fact / expected - 1 : 0;
+  const isAhead = tempoDelta >= 0;
+  const status = isAhead ? "good" : Math.abs(tempoDelta) <= 0.05 ? "warn" : "bad";
+  const format = type === "percent" ? fmtPercent : type === "number" ? fmtNumber : fmtMoney;
+
+  return (
+    <div className="relative overflow-hidden rounded-[1.7rem] border border-white/12 bg-white/[0.065] p-4 backdrop-blur-xl">
+      <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm text-white/45">{title}</div>
+          <div className="mt-1 text-2xl font-semibold tracking-tight text-white">{format(target)}</div>
+        </div>
+        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${glassTone(status)}`}>
+          {isAhead ? "+" : ""}{fmtPercent(tempoDelta, 1)}
+        </span>
+      </div>
+      <div className="mt-4 space-y-2">
+        <div className="flex justify-between text-xs text-white/45">
+          <span>Факт YTD</span>
+          <span className="font-medium text-white/75">{format(fact)}</span>
+        </div>
+        <div className="flex justify-between text-xs text-white/45">
+          <span>Темп к неделе</span>
+          <span className="font-medium text-white/75">{format(expected)}</span>
+        </div>
+        <ProgressBar value={completion} />
+        <div className="flex justify-between text-xs text-white/40">
+          <span>Выполнение годовой цели</span>
+          <span>{fmtPercent(completion, 1)}</span>
+        </div>
+      </div>
+      {hint && <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/45">{hint}</div>}
     </div>
   );
 }
@@ -545,6 +583,13 @@ function Dashboard({ model, weeks, budget, selectedWeek, setSelectedWeek, openBu
             })}
           </div>
         </Card>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AnnualTargetCard title="Цель выручки на год" target={targetRevenue} fact={revenueYtd} expected={(targetRevenue / 52) * selectedWeek} hint="Показывает отставание или перевыполнение относительно планового темпа года." />
+        <AnnualTargetCard title="Цель NSM на год" target={targetNsm} fact={nsmYtd} expected={(targetNsm / 52) * selectedWeek} hint="North Star Metric: регулярная идентифицированная база." />
+        <AnnualTargetCard title="Цель онлайн-выручки" target={targetRevenue * model.targetOnlineShare} fact={onlineYtd} expected={(targetRevenue * model.targetOnlineShare / 52) * selectedWeek} hint="Доставка и самовывоз в годовой цели." />
+        <AnnualTargetCard title="Годовой бюджет" target={model.marketingBudget} fact={totalBudgetFact} expected={(model.marketingBudget / 52) * selectedWeek} hint="Контроль темпа освоения маркетингового бюджета." />
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
